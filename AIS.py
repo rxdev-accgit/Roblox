@@ -1,10 +1,11 @@
 import os
+from datetime import date, datetime
 from openai import OpenAI
 
 print("Running Ai...")
 
 USE_CLOUD = True
-OPENAI_MODEL = "gpt-4o-mini"
+OPENAI_MODEL = "gpt-4.1"
 API_KEY = os.getenv("OPEN_AI_KEY")
 
 if not API_KEY: raise RuntimeError("Unable to get OpenAi key")
@@ -16,7 +17,7 @@ memory = {}
 
 
 #Build prompt function, this gives the AI instructions how to act when someone chats with it.
-def build_promptFUNC(PLR_NAME, PLR_MEMORY, PLR_MESSAGE, PLR_CHATHISTORY):
+def build_promptFUNC(PLR_NAME, PLR_MEMORY, PLR_MESSAGE, PLR_CHATHISTORY, CURRENT_DATE):
     MSGtimes = PLR_MEMORY["MSGcontext"]["times_spoken"]
     LAST_TOPIC = PLR_MEMORY["MSGcontext"]["last_topic"]
     SUMARRY = PLR_MEMORY["summary"]
@@ -61,6 +62,8 @@ def build_promptFUNC(PLR_NAME, PLR_MEMORY, PLR_MESSAGE, PLR_CHATHISTORY):
         Summary: {SUMARRY}
         The chat history between you and them, you will have to remember this so you know the context of the whole chat: {PLR_CHATHISTORY}
 
+        Date of the day that you are chatting with the user (use this when needed): {CURRENT_DATE}
+
         Player Message:
         "{PLR_MESSAGE}"
         """
@@ -69,14 +72,17 @@ def build_promptFUNC(PLR_NAME, PLR_MEMORY, PLR_MESSAGE, PLR_CHATHISTORY):
 
 #this function wil call the ML MODEL so it can use the prompt and give answers
 def call_cloud_llmFUNC(ML_prompt):
-    response = Client.chat.completions.create(
+    response = Client.responses.create(
         model = OPENAI_MODEL,
+        tools = [
+            {"type": "web_search"}
+        ],
         messages = [
             {"role": "system", "content": ML_prompt}
         ],
         temperature = 0.6
     )
-    return response.choices[0].message.content.strip()
+    return response.output_text.strip()
 
 
 #this function will update the memory of the AI based on the context of the Users sentence:
@@ -123,6 +129,8 @@ def format_AImemoryFUNC(chathistory):
 def MainAiFUNC(plr, message, plr_id):
     print("Current memory:", memory)
 
+    local_date = datetime.now().strftime("%Y-%m-%d")
+
     if plr not in memory:
         memory[plr] = {
             "profile": {
@@ -134,7 +142,8 @@ def MainAiFUNC(plr, message, plr_id):
                 "last_topic": "N/A"
             },
             "summary": "New player.",
-            "chat_history": []
+            "chat_history": [],
+            "current_date": local_date
         }
 
     PLR_MEMORY = memory[plr]
@@ -147,7 +156,8 @@ def MainAiFUNC(plr, message, plr_id):
         PLR_NAME=plr,
         PLR_MEMORY=PLR_MEMORY,
         PLR_MESSAGE=message,
-        PLR_CHATHISTORY=format_AImemoryFUNC(PLR_MEMORY["chat_history"])
+        PLR_CHATHISTORY=format_AImemoryFUNC(PLR_MEMORY["chat_history"]),
+        CURRENT_DATE=local_date
     )
 
     AI_RESPONSE = call_cloud_llmFUNC(prompt)

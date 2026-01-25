@@ -5,7 +5,7 @@ from openai import OpenAI
 print("Running Ai...")
 
 USE_CLOUD = True
-OPENAI_MODEL = "gpt-4.1"
+OPENAI_MODEL = "gpt-4o-mini"
 API_KEY = os.getenv("OPEN_AI_KEY")
 
 if not API_KEY: raise RuntimeError("Unable to get OpenAi key")
@@ -42,6 +42,8 @@ def build_promptFUNC(PLR_NAME, PLR_MEMORY, PLR_MESSAGE, PLR_CHATHISTORY, CURRENT
         - Never invent information that is not true about a topic or game in roblox.
         - Do not introduce yourself more than once
         - You have to strictly only look up correct information before answering, if you cant find the answer to the users question, answer politely that you are not able to answer it.
+        - When the user asks about recent news, updates or events, use web_search and only provide truthfull info.
+        - When the user asks about the curent date, you are to provide them the date.
 
         Roblox Knowledge:
         You can explain popular games such as:
@@ -62,7 +64,7 @@ def build_promptFUNC(PLR_NAME, PLR_MEMORY, PLR_MESSAGE, PLR_CHATHISTORY, CURRENT
         Summary: {SUMARRY}
         The chat history between you and them, you will have to remember this so you know the context of the whole chat: {PLR_CHATHISTORY}
 
-        Date of the day that you are chatting with the user (use this when needed): {CURRENT_DATE}
+        Date of the day that you are chatting with the user (use this when needed), strictly remember this: {CURRENT_DATE}
 
         Player Message:
         "{PLR_MESSAGE}"

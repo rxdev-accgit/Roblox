@@ -77,7 +77,7 @@ def call_cloud_llmFUNC(ML_prompt):
         tools = [
             {"type": "web_search"}
         ],
-        messages = [
+        input = [
             {"role": "system", "content": ML_prompt}
         ],
         temperature = 0.6

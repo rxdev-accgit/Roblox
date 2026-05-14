@@ -18,7 +18,6 @@ local ATTEMPT_LIMIT = 5
 local CDSEvent = game.ReplicatedStorage.CDS_Events:WaitForChild("CDS_InfoCommunication")
 --
 
-
 --Constructor Method, this method initializes the ClickInfo table of a player, the table includes: Click amount, total clicks ever (which counts the number of clicks that a player has obtained since day 1 of joining the game)
 -- IT also initializes Multipliers and Rebirth Multipliers which later will be updated whenever the player buys an upgrade or rebirths
 function ClickManager.Initialize(Player: Player)

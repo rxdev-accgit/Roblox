@@ -19,7 +19,8 @@ local CDSEvent = game.ReplicatedStorage.CDS_Events:WaitForChild("CDS_InfoCommuni
 --
 
 
---Constructor Method
+--Constructor Method, this method initializes the ClickInfo table of a player, the table includes: Click amount, total clicks ever (which counts the number of clicks that a player has obtained since day 1 of joining the game)
+-- IT also initializes Multipliers and Rebirth Multipliers which later will be updated whenever the player buys an upgrade or rebirths
 function ClickManager.Initialize(Player: Player)
 	print("[CLICKMANAGER]: Initializing for player: "..Player.Name.." ("..Player.UserId..")")
 	local self = setmetatable({}, ClickManager)
@@ -52,13 +53,14 @@ function ClickManager.Initialize(Player: Player)
 	
 	
 	Player:SetAttribute("OwnsAutoClicker", false)
-	print("[CLICKMANAGER]: OwnsAutoClicker set to:", Player:GetAttribute("OwnsAutoClicker"))
+	print("[CLICKMANAGER]: OwnsAutoClicker set to:", Player:GetAttribute("OwnsAutoClicker")) --Debug lines
 
-	print("[CLICKMANAGER]: Initialization complete for player: "..Player.Name)
+	print("[CLICKMANAGER]: Initialization complete for player: "..Player.Name) --debug lines
 	return self
 end
 
 --Methods
+--This function Uses a safe datastore call (with repeat-until) to safely, and cleanly load a players data, uppon failing to do so the players data is set to default starting data.
 function ClickManager:LoadClicks(Player: Player)
 	print("[CLICKMANAGER]: Attempting to load data for player: "..Player.Name)
 	local succes, ClickInfoTable
@@ -105,7 +107,7 @@ function ClickManager:LoadClicks(Player: Player)
 		return 
 	end
 
-	print("[CLICKMANAGER]: Data found, configuring state for player: "..Player.Name)
+	print("[CLICKMANAGER]: Data found, configuring state for player: "..Player.Name) --Debug Lines
 
 	--Configure ClickInfo
 	self.ClickInfo["Player_"..Player.UserId].Clicks = ClickInfoTable.ClickInfo.Clicks
@@ -114,12 +116,12 @@ function ClickManager:LoadClicks(Player: Player)
 	self.ClickInfo["Player_"..Player.UserId].TotalClicksEver = ClickInfoTable.ClickInfo.TotalClicksEver
 	self.ClickInfo["Player_"..Player.UserId].ClickPerTap = ClickInfoTable.ClickInfo.ClickPerTap
 	
-	print("[CLICKMANAGER]: ClickInfo configured — Clicks:", self.ClickInfo["Player_"..Player.UserId].Clicks, "| Multiplier:", self.ClickInfo["Player_"..Player.UserId].Multiplier, "| RebirthMultiplier:", self.ClickInfo["Player_"..Player.UserId].RebirthMultiplier, "| ClickPerTap:", self.ClickInfo["Player_"..Player.UserId].ClickPerTap)
+	print("[CLICKMANAGER]: ClickInfo configured — Clicks:", self.ClickInfo["Player_"..Player.UserId].Clicks, "| Multiplier:", self.ClickInfo["Player_"..Player.UserId].Multiplier, "| RebirthMultiplier:", self.ClickInfo["Player_"..Player.UserId].RebirthMultiplier, "| ClickPerTap:", self.ClickInfo["Player_"..Player.UserId].ClickPerTap) --Debug lines
 	--
 
 	--Configure Rebirth Counter
 	self.Rebirths = ClickInfoTable.Rebirths
-	print("[CLICKMANAGER]: Rebirths configured —", self.Rebirths)
+	print("[CLICKMANAGER]: Rebirths configured —", self.Rebirths) --debug lines
 	--
 
 	--Configure AutoClicker
@@ -141,7 +143,7 @@ function ClickManager:LoadClicks(Player: Player)
 	print("[CLICKMANAGER]: Load complete for player: "..Player.Name)
 end
 
-function ClickManager:SaveData(Player: Player)
+function ClickManager:SaveData(Player: Player) --This function saves the data of the player safely (using a repeat-until block)
 	print("[CLICKMANAGER]: Attempting to save data for player: "..Player.Name)
 	local key = "["..Player.Name.."]_"..tostring(Player.UserId)
 	local succes, err
@@ -168,14 +170,14 @@ function ClickManager:SaveData(Player: Player)
 	end
 end
 
-function ClickManager:AddClick(Player: Player)
+function ClickManager:AddClick(Player: Player) --this function correctly adds clicks and mutliplies the initial click value (1) with multipliers (rebirth and normal multiplier)
 	local SendInfoVar = 0
 	self.ClickInfo["Player_"..Player.UserId].TotalClicksEver += math.round((1 * self.ClickInfo["Player_"..Player.UserId].Multiplier * self.ClickInfo["Player_"..Player.UserId].RebirthMultiplier) + (self.ClickInfo["Player_"..Player.UserId].ClickPerTap - 1))
 	self.ClickInfo["Player_"..Player.UserId].Clicks += math.round((1 * self.ClickInfo["Player_"..Player.UserId].Multiplier * self.ClickInfo["Player_"..Player.UserId].RebirthMultiplier) + (self.ClickInfo["Player_"..Player.UserId].ClickPerTap - 1))
 	SendInfoVar += math.round((1 * self.ClickInfo["Player_"..Player.UserId].Multiplier * self.ClickInfo["Player_"..Player.UserId].RebirthMultiplier) + (self.ClickInfo["Player_"..Player.UserId].ClickPerTap - 1))
 	local NewClickAmount = self.ClickInfo["Player_"..Player.UserId].Clicks
 
-	CDSEvent:FireClient(Player, SendInfoVar)
+	CDSEvent:FireClient(Player, SendInfoVar) --this is a event that displays the amount of clicks that a user has, it gets fired after every click
 	
 	--print("[CLICKMANAGER]: Click registered for "..Player.Name.." — Clicks:", NewClickAmount, "| TotalClicksEver:", self.ClickInfo["Player_"..Player.UserId].TotalClicksEver)
 
@@ -187,7 +189,7 @@ function ClickManager:AddClick(Player: Player)
 	return self.ClickInfo["Player_"..Player.UserId]
 end
 
-function ClickManager:Rebirth(Player: Player, RebirthAmount: number)
+function ClickManager:Rebirth(Player: Player, RebirthAmount: number) --this function will rebirth the player, it sets Clicks to 0 and updates self.Rebirths +1, 
 	print("[CLICKMANAGER]: Rebirth attempted by "..Player.Name.." — RebirthAmount:", RebirthAmount, "| Current Clicks:", self.ClickInfo["Player_"..tostring(Player.UserId)].Clicks)
 	if RebirthAmount == 0 then 
 		print("[CLICKMANAGER]: Rebirth blocked — RebirthAmount is 0")
@@ -199,7 +201,7 @@ function ClickManager:Rebirth(Player: Player, RebirthAmount: number)
 		return
 	end
 
-	if self.ClickInfo["Player_"..tostring(Player.UserId)].Clicks >= UpgradeData[RebirthAmount].Requirements["ClicksNeeded"] then
+	if self.ClickInfo["Player_"..tostring(Player.UserId)].Clicks >= UpgradeData[RebirthAmount].Requirements["ClicksNeeded"] then --this line checks wether the player has sufficient clicks before rebirthing
 		self.Rebirths += 1
 		Player:SetAttribute("Rebirths", self.Rebirths)
 		self.ClickInfo["Player_"..tostring(Player.UserId)].Clicks = 0
@@ -218,7 +220,7 @@ function ClickManager:Rebirth(Player: Player, RebirthAmount: number)
 	end
 end
 
-function ClickManager:Upgrade(Player: Player, Upgrade:string, Bought: boolean)
+function ClickManager:Upgrade(Player: Player, Upgrade:string, Bought: boolean) --this function safely upgrades the players multiplier, autoclicker (if the player onws it) and clickspertap
 	print("[CLICKMANAGER]: Upgrade attempted by "..Player.Name.." — Upgrade:", Upgrade, "| Bought:", Bought)
 	--...
 	local UpgradeTable = UpgradeData[self.Rebirths] --Returns a list of upgrades depending on which rebirth number it is
@@ -247,7 +249,7 @@ function ClickManager:Upgrade(Player: Player, Upgrade:string, Bought: boolean)
 	end
 end
 
-function ClickManager:StartAutoClicker(Player:Player, IsBought: boolean)
+function ClickManager:StartAutoClicker(Player:Player, IsBought: boolean) --this function starts the autoclicker for the player if he owns it
 	if IsBought then
 		self.AutoClicker["Player_"..Player.UserId].CanActivate = true
 		Player:SetAttribute("OwnsAutoClicker", true)
@@ -257,8 +259,8 @@ function ClickManager:StartAutoClicker(Player:Player, IsBought: boolean)
 		--print("[CLICKMANAGER]: AutoClicker Passive Activated")
 		
 		if self.AutoClicker["Player_"..Player.UserId].CanActivate then
-			for i = 1, self.AutoClicker["Player_"..Player.UserId].ClicksPerSecond do
-				self:AddClick(Player)
+			for i = 1, self.AutoClicker["Player_"..Player.UserId].ClicksPerSecond do 
+				self:AddClick(Player) --this self:AddClick will execute as many times as ClicksPerSecond is set, for example if ClicksPErSecond is 5, then this self:AddClick will execute 5 times
 				--print("[CLICKMANAGER]: AutoClicker Active In Action —", self.AutoClicker["Player_"..Player.UserId].ClicksPerSecond)
 			end
 		end
@@ -267,11 +269,11 @@ function ClickManager:StartAutoClicker(Player:Player, IsBought: boolean)
 	end
 end
 
-function ClickManager:StopAutoClicker(Player: Player)
+function ClickManager:StopAutoClicker(Player: Player) --this effectively stops the autoclicker
 	self.AutoClicker["Player_"..Player.UserId].CanActivate = false
 end
 
-function ClickManager:ResetProgress(Player: Player)
+function ClickManager:ResetProgress(Player: Player) -- This function resets the progress of the player, it resets the amoutn of clicks, the multiplier, the rebirthmultiplier, clickspertap, totalclicksever; the autoclicker info table and the attributes
 	self.ClickInfo["Player_"..Player.UserId].Clicks = 0
 	self.ClickInfo["Player_"..Player.UserId].Multiplier = 1
 	self.PurchasedUpgrades = {}
@@ -294,4 +296,4 @@ end
 
 
 
-return ClickManager
+return ClickManager 

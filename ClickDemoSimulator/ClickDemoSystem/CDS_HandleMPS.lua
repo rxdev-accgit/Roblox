@@ -7,10 +7,13 @@ local CDSEvent1: BindableEvent = cds_eventfolder:WaitForChild("CDS_ResetEvent")
 
 local FunctionTable = {}
 
+
+--This table contains functions that will execute when handler[ProductInfo] is called, the function corresponding to the correct Dev Product Id will be executed.
 FunctionTable[3592095766] = function(Player: Player)
 	CDSEvent1:Fire(Player)
 end
 
+--This function executes whenever a player buys a dev product, MPS.ProcessReceipt (MarketPlaceService) return a RIT (receipt info table) that i used to create a Handler function which i later safely execute using a protected call (pcall)
 local function handleMPS(RIT)
 	local PlayerId = RIT.PlayerId
 	local ProductId = RIT.ProductId
@@ -33,4 +36,4 @@ local function handleMPS(RIT)
 	end
 end
 
-MPS.ProcessReceipt = handleMPS
+MPS.ProcessReceipt = handleMPS --this line of code connects the event ProcessReceipt to my handleMPS function.

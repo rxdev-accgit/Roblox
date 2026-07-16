@@ -1,0 +1,11 @@
+# Rx_AML (Rx Automated Machine Learning)
+
+A from-scratch neural network implementation in Luau for Roblox, including:
+- Custom Neuron/Layer/Network classes with forward pass and backpropagation
+- Pluggable activations (Sigmoid, ReLU, Tanh, LeakyReLU)
+- Pluggable loss functions, optimizers, and initializers
+- Persistent model saving/loading via Roblox DataStoreService
+
+Verified working on:
+- XOR (non-linearly-separable logic gate)
+- Circle classification (generalization test on unseen points, ~100% accuracy)
